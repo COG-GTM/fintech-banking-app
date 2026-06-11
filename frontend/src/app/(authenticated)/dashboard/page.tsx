@@ -16,6 +16,7 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import AccountCard from '@/components/dashboard/AccountCard';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
+import RecentActivityFeed from '@/components/dashboard/RecentActivityFeed';
 import SpendingOverview from '@/components/dashboard/SpendingOverview';
 import QuickActions from '@/components/dashboard/QuickActions';
 import PullToRefresh from '@/components/mobile/PullToRefresh';
@@ -434,6 +435,18 @@ export default function DashboardPage() {
                   />
                 ))}
               </div>
+
+              {/* Recent Activity Feed */}
+              <RecentActivityFeed
+                transactions={transactions.slice(0, 10).map(t => ({
+                  id: t.id.toString(),
+                  amount: t.amount,
+                  transactionType: t.transaction_type,
+                  merchant: t.merchant || t.description,
+                  timestamp: t.transaction_date,
+                  status: t.status.toLowerCase() as 'completed' | 'pending',
+                }))}
+              />
 
               {/* Spending Overview */}
               <div className="spending-overview">

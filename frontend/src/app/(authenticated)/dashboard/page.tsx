@@ -16,6 +16,7 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import AccountCard from '@/components/dashboard/AccountCard';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
+import RecentActivity from '@/components/dashboard/RecentActivity';
 import SpendingOverview from '@/components/dashboard/SpendingOverview';
 import QuickActions from '@/components/dashboard/QuickActions';
 import PullToRefresh from '@/components/mobile/PullToRefresh';
@@ -521,6 +522,13 @@ export default function DashboardPage() {
                   )}
                 </div>
               </Card>
+
+              {/* Recent Activity Feed */}
+              <RecentActivity
+                transactions={transactions}
+                categories={categories}
+                accounts={accounts}
+              />
             </motion.div>
           </div>
         </motion.div>

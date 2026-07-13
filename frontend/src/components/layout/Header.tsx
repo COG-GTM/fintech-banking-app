@@ -28,7 +28,8 @@ import {
   FileText,
   MessageSquare,
   UserPlus,
-  Coins
+  Coins,
+  PiggyBank
 } from 'lucide-react';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
@@ -308,6 +309,7 @@ export const Header: React.FC<HeaderProps> = () => {
     { href: '/budget', label: 'Budget', icon: <Target size={18} /> },
     { href: '/cards', label: 'Cards', icon: <CardIcon size={18} /> },
     { href: '/goals', label: 'Goals', icon: <TrendingUp size={18} /> },
+    { href: '/mis-finanzas', label: 'Mis Finanzas', icon: <PiggyBank size={18} /> },
   ];
 
   const moreMenuItems = [

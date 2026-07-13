@@ -170,6 +170,10 @@
     --cat-pink: #FFAFD5;
     --cat-purple: #C8B6FF;
     --cat-red: #FFAFD5;
+    --tf-blue: #0066FF;
+    --tf-blue-600: #0052CC;
+    --tf-blue-050: rgba(0,102,255,0.12);
+    --gradient-tf: linear-gradient(135deg,#0066FF 0%,#0052CC 100%);
   }
 
   :root[data-theme='dark'] {
@@ -242,6 +246,10 @@
     --cat-pink: rgba(255, 112, 200, 0.45);
     --cat-purple: rgba(149, 111, 255, 0.45);
     --cat-red: rgba(255, 112, 200, 0.45);
+    --tf-blue: #3D8BFF;
+    --tf-blue-600: #0066FF;
+    --tf-blue-050: rgba(61,139,255,0.18);
+    --gradient-tf: linear-gradient(135deg,#3D8BFF 0%,#0066FF 100%);
   }
 
   html {

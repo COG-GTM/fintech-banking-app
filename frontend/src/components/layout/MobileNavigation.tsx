@@ -26,7 +26,8 @@ import {
   FileText,
   MessageSquare,
   UserPlus,
-  Coins
+  Coins,
+  PiggyBank
 } from 'lucide-react';
 import AnimatedLogo from '../ui/AnimatedLogo';
 import Button from '../ui/Button';
@@ -126,6 +127,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
     { href: '/budget', label: 'Budget', icon: <Target size={20} /> },
     { href: '/cards', label: 'Cards', icon: <CardIcon size={20} /> },
     { href: '/goals', label: 'Goals', icon: <TrendingUp size={20} /> },
+    { href: '/mis-finanzas', label: 'Mis Finanzas', icon: <PiggyBank size={20} /> },
     { href: '/transfer', label: 'Transfer Money', icon: <RefreshCcw size={20} /> },
     { href: '/p2p', label: 'Send to Friend', icon: <Send size={20} /> },
     { href: '/analytics', label: 'Analytics', icon: <LineChart size={20} /> },

@@ -20,7 +20,8 @@ import {
   Sun,
   RefreshCcw,
   Send,
-  CalendarDays
+  CalendarDays,
+  PiggyBank
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -66,6 +67,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
     { href: '/budget', label: 'Budget', icon: <Target size={20} /> },
     { href: '/cards', label: 'Cards', icon: <CreditCard size={20} /> },
     { href: '/goals', label: 'Goals', icon: <TrendingUp size={20} /> },
+    { href: '/mis-finanzas', label: 'Mis Finanzas', icon: <PiggyBank size={20} /> },
   ];
 
   const secondaryNavItems: NavItem[] = [

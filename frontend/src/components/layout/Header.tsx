@@ -28,7 +28,8 @@ import {
   FileText,
   MessageSquare,
   UserPlus,
-  Coins
+  Coins,
+  PiggyBank
 } from 'lucide-react';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
@@ -308,6 +309,7 @@ export const Header: React.FC<HeaderProps> = () => {
     { href: '/budget', label: 'Budget', icon: <Target size={18} /> },
     { href: '/cards', label: 'Cards', icon: <CardIcon size={18} /> },
     { href: '/goals', label: 'Goals', icon: <TrendingUp size={18} /> },
+    { href: '/mis-finanzas', label: 'Mis Finanzas', icon: <PiggyBank size={18} /> },
   ];
 
   const moreMenuItems = [
@@ -330,6 +332,7 @@ export const Header: React.FC<HeaderProps> = () => {
     { value: 'notifications', label: 'Notifications', icon: <Bell size={16} />, href: '/notifications' },
     { value: 'security', label: 'Security', icon: <Shield size={16} />, href: '/security' },
   ];
+  const misFinanzasItem = navigationItems.find(item => item.href === '/mis-finanzas');
 
   const userMenuItems = [
     { value: 'profile', label: 'My Profile', icon: <User size={16} />, href: '/settings' },
@@ -497,6 +500,12 @@ export const Header: React.FC<HeaderProps> = () => {
                     icon: navigationItems[5].icon,
                     href: navigationItems[5].href,
                     className: 'min-[1500px]:hidden',
+                  }] : []),
+                  ...(misFinanzasItem ? [{
+                    value: misFinanzasItem.href.slice(1),
+                    label: misFinanzasItem.label,
+                    icon: misFinanzasItem.icon,
+                    href: misFinanzasItem.href,
                   }] : []),
                   // Always include additional menu items (starting after the main navigation items)
                   ...moreMenuItems.slice(navigationItems.length),

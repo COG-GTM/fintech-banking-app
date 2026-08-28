@@ -44,6 +44,7 @@ from .routes import (
     p2p,
     payment_methods,
     recurring,
+    safe_to_spend,
     savings,
     search,
     security,
@@ -186,6 +187,7 @@ app.include_router(uploads.router, prefix="/api/uploads", tags=["File Uploads"])
 app.include_router(cards.router, prefix="/api/cards", tags=["Card Management"])
 app.include_router(credit.router, prefix="/api/credit", tags=["Credit Management"])
 app.include_router(savings.router, prefix="/api/savings", tags=["Smart Savings"])
+app.include_router(safe_to_spend.router, prefix="/api/safe-to-spend", tags=["Safe to Spend"])
 app.include_router(business.router, prefix="/api/business", tags=["Business Banking"])
 app.include_router(subscriptions.router, prefix="/api/subscriptions", tags=["Subscription Management"])
 app.include_router(crypto.router, prefix="/api/crypto", tags=["Digital Assets"])

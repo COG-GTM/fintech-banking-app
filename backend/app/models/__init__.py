@@ -412,6 +412,12 @@ from .entities.savings_models import (
     SavingsRuleResponse as SavingsRuleResponse,
 )
 
+# Safe to Spend Models
+from .entities.safe_to_spend_models import (
+    SafeToSpendResponse as SafeToSpendResponse,
+    UpcomingBill as UpcomingBill,
+)
+
 # Subscription Models
 from .entities.subscription_models import (
     BulkImportRequest as BulkImportRequest,

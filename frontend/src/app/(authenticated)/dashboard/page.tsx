@@ -17,6 +17,7 @@ import Card from '@/components/ui/Card';
 import AccountCard from '@/components/dashboard/AccountCard';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import SpendingOverview from '@/components/dashboard/SpendingOverview';
+import SafeToSpend from '@/components/dashboard/SafeToSpend';
 import QuickActions from '@/components/dashboard/QuickActions';
 import PullToRefresh from '@/components/mobile/PullToRefresh';
 import StatCard from '@/components/dashboard/StatCard';
@@ -449,6 +450,8 @@ export default function DashboardPage() {
 
             {/* Recent Transactions & Insights */}
             <motion.div variants={itemVariants} className="space-y-6">
+              <SafeToSpend />
+
               <div className="recent-transactions">
                 <RecentTransactions 
                   transactions={transactions.map(t => {

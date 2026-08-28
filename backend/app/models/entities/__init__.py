@@ -8,6 +8,7 @@ from .crypto_models import *
 from .insurance_models import *
 from .loan_models import *
 from .savings_models import *
+from .safe_to_spend_models import *
 from .subscription_models import *
 from .unified_models import *
 
@@ -54,6 +55,8 @@ __all__ = [
     # Savings models
     'SavingsGoal',
     'SavingsRule',
+    'SafeToSpendResponse',
+    'UpcomingBill',
     # Subscription models
     'Subscription',
     'SubscriptionAnalysis',

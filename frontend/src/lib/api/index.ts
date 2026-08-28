@@ -39,6 +39,9 @@ export type { SecurityEvent, LoginSession, TwoFactorMethod, SecuritySettings, Pa
 export { subscriptionsService } from './subscriptions';
 export type { Subscription, SubscriptionCreate, SubscriptionUpdate, SubscriptionAnalysis, CancellationReminder, OptimizationSuggestion, OptimizationResponse } from './subscriptions';
 
+export { safeToSpendService } from './safeToSpend';
+export type { SafeToSpend, UpcomingBill } from './safeToSpend';
+
 export { businessApi } from './business';
 export type { 
   Invoice, InvoiceLineItem, CreateInvoiceRequest, BusinessExpense, 

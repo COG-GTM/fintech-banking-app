@@ -10,6 +10,7 @@ import { SecurityProvider } from '@/contexts/SecurityContext';
 import { AlertProvider } from '@/contexts/AlertContext';
 import OnboardingModal from '@/components/mobile/OnboardingModal';
 import DemoNotifications from '@/components/demo/DemoNotifications';
+import CommandPalette from '@/components/ui/CommandPalette';
 import SessionTimeoutModal, { AutoLogoutHandler } from '@/components/security/SessionTimeoutModal';
 import { performanceMonitor } from '@/utils/PerformanceMonitor';
 import dynamic from 'next/dynamic';
@@ -59,6 +60,7 @@ export default function AuthenticatedLayout({
               isOpen={showOnboarding} 
               onClose={() => setShowOnboarding(false)} 
             />
+            <CommandPalette />
             <DemoNotifications />
             <SessionTimeoutModal />
             <AutoLogoutHandler />

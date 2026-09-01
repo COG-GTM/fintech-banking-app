@@ -28,7 +28,8 @@ import {
   FileText,
   MessageSquare,
   UserPlus,
-  Coins
+  Coins,
+  Search
 } from 'lucide-react';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
@@ -60,6 +61,7 @@ export const Header: React.FC<HeaderProps> = () => {
   const [hasNewNotifications, setHasNewNotifications] = useState(false);
   const [totalBalance, setTotalBalance] = useState<number>(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
+  const [keyboardShortcut, setKeyboardShortcut] = useState('⌘K');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showBalanceDropdown, setShowBalanceDropdown] = useState(false);
   const [accountsData, setAccountsData] = useState<{
@@ -83,6 +85,10 @@ export const Header: React.FC<HeaderProps> = () => {
   const balanceRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const previousCountRef = useRef<number>(0);
+
+  useEffect(() => {
+    setKeyboardShortcut(/Mac|iPhone|iPad|iPod/.test(navigator.platform) ? '⌘K' : 'Ctrl K');
+  }, []);
 
   // Function to load notifications
   const loadNotifications = async (showRefreshIndicator = false) => {
@@ -521,6 +527,16 @@ export const Header: React.FC<HeaderProps> = () => {
 
           {/* Right section */}
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <button
+              type="button"
+              className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[rgba(var(--glass-rgb),0.3)] transition-all duration-200"
+              onClick={() => window.dispatchEvent(new Event('open-command-palette'))}
+              aria-label="Search"
+            >
+              <Search size={16} />
+              <span className="text-sm font-medium">Search</span>
+              <kbd className="rounded border border-[var(--border-1)] px-1.5 py-0.5 text-xs">{keyboardShortcut}</kbd>
+            </button>
             <div className="hidden sm:block">
               <ThemeToggle size="sm" />
             </div>

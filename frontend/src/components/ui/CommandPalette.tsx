@@ -18,7 +18,10 @@ export default function CommandPalette() {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const commands = useMemo(() => buildCommands(), []);
-  const filteredCommands = useMemo(() => filterCommands(commands, query), [commands, query]);
+  const filteredCommands = useMemo(() => {
+    const ranked = filterCommands(commands, query);
+    return commandGroups.flatMap((group) => ranked.filter((command) => command.group === group));
+  }, [commands, query]);
 
   const openPalette = useCallback(() => {
     setQuery('');

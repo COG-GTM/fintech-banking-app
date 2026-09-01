@@ -125,6 +125,7 @@
     /* Finance-themed colors adapted from s25-project-black palette */
     --primary-emerald: #10b981;
     --primary-blue: #3498DB;
+    --primary-blue-rgb: 52 152 219;
     --primary-navy: #1e3a8a;
     --primary-teal: #4ECDC4;
     --primary-indigo: #4f46e5;
@@ -197,6 +198,7 @@
     /* Dark mode finance colors */
     --primary-emerald: #047857;
     --primary-blue: #2563EB;
+    --primary-blue-rgb: 37 99 235;
     --primary-navy: #1e3a8a;
     --primary-teal: #0891B2;
     --primary-indigo: #6D28D9;

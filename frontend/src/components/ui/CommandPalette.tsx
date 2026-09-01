@@ -177,7 +177,7 @@ export default function CommandPalette() {
                                 aria-selected={commandIndex === selectedIndex}
                                 className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
                                   commandIndex === selectedIndex
-                                    ? 'bg-[rgba(var(--primary-blue),0.25)] text-[var(--text-1)] ring-1 ring-[rgba(var(--primary-blue),0.4)]'
+                                    ? 'bg-[rgb(var(--primary-blue-rgb)/0.25)] text-[var(--text-1)] ring-1 ring-[rgb(var(--primary-blue-rgb)/0.4)]'
                                     : 'text-[var(--text-2)] hover:bg-[rgba(var(--glass-rgb),0.2)] hover:text-[var(--text-1)]'
                                 }`}
                                 onMouseEnter={() => setSelectedIndex(commandIndex)}

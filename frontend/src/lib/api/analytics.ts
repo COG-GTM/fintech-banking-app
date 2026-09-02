@@ -55,6 +55,43 @@ export interface GoalProgress {
   on_track: boolean;
 }
 
+export interface CashFlowForecastEvent {
+  date: string;
+  name: string;
+  amount: number;
+  source: 'subscription' | 'recurring';
+}
+
+export interface CashFlowForecastProjection {
+  date: string;
+  balance: number;
+  scheduled_outflow: number;
+}
+
+export interface CashFlowForecastAlert {
+  date: string;
+  type: 'negative_balance' | 'below_buffer';
+  balance: number;
+}
+
+export interface CashFlowForecast {
+  days: number;
+  start_date: string;
+  end_date: string;
+  starting_balance: number;
+  projected_end_balance: number;
+  lowest_balance: number;
+  lowest_balance_date: string;
+  safe_to_spend: number;
+  buffer: number;
+  avg_daily_spend: number;
+  avg_daily_income: number;
+  total_scheduled_outflow: number;
+  upcoming_events: CashFlowForecastEvent[];
+  daily_projection: CashFlowForecastProjection[];
+  alerts: CashFlowForecastAlert[];
+}
+
 class AnalyticsService {
   async getSpendingByCategory(startDate?: string, endDate?: string, incomeOnly = false, limit = 10) {
     const params = new URLSearchParams();
@@ -108,6 +145,10 @@ class AnalyticsService {
       overall_progress: number;
       goal_projections: GoalProgress[];
     }>('/api/analytics/goals/progress');
+  }
+
+  async getCashFlowForecast(days = 30) {
+    return apiClient.get<CashFlowForecast>(`/api/analytics/cash-flow/forecast?days=${days}`);
   }
 
   async exportData(params: AnalyticsExportParams & { 

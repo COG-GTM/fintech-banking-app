@@ -17,6 +17,7 @@ import Card from '@/components/ui/Card';
 import AccountCard from '@/components/dashboard/AccountCard';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import SpendingOverview from '@/components/dashboard/SpendingOverview';
+import CashFlowForecast from '@/components/dashboard/CashFlowForecast';
 import QuickActions from '@/components/dashboard/QuickActions';
 import PullToRefresh from '@/components/mobile/PullToRefresh';
 import StatCard from '@/components/dashboard/StatCard';
@@ -444,6 +445,9 @@ export default function DashboardPage() {
                   onTimeRangeChange={handleTimeRangeChange}
                   isLoading={isLoadingStats}
                 />
+              </div>
+              <div className="cash-flow-forecast">
+                <CashFlowForecast />
               </div>
             </motion.div>
 

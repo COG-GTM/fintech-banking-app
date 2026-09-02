@@ -25,7 +25,7 @@ export { goalsService } from './goals';
 export type { Goal, GoalCreate, GoalUpdate, GoalContribution, GoalSummary } from './goals';
 
 export { analyticsService } from './analytics';
-export type { AnalyticsExportParams, SpendingByCategory, IncomeExpenseSummary, NetWorthHistory, BudgetPerformance, GoalProgress } from './analytics';
+export type { AnalyticsExportParams, SpendingByCategory, IncomeExpenseSummary, NetWorthHistory, BudgetPerformance, GoalProgress, CashFlowForecast, CashFlowForecastEvent, CashFlowForecastProjection, CashFlowForecastAlert } from './analytics';
 
 export { p2pApi } from './p2p';
 export type { P2PContact, P2PTransferRequest, P2PTransferResponse, P2PSplitPaymentRequest, P2PSplitPaymentResponse, P2PPaymentRequest, P2PQRCodeResponse } from './p2p';

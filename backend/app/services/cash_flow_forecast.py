@@ -1,6 +1,5 @@
 """Cash-flow forecasting calculations."""
 
-from calendar import monthrange
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -26,7 +25,7 @@ def _as_date(value: Any) -> date | None:
     return None
 
 
-def _cycle_step(cycle: Any) -> tuple[str, int | None]:
+def _cycle_step(cycle: Any) -> tuple[str, int]:
     value = getattr(cycle, "value", cycle)
     normalized = str(value or "").lower().replace("-", "_")
     if normalized == "daily":
@@ -66,7 +65,6 @@ def _event_occurrences(
         if current is None:
             continue
         unit, step = _cycle_step(_value(item, cycle_key))
-        assert step is not None
         amount = float(_value(item, "amount", 0) or 0)
         name = str(_value(item, "name") or _value(item, "merchant_name") or "Recurring payment")
         transaction_type = str(

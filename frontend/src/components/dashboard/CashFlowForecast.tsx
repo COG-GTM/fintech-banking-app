@@ -141,7 +141,7 @@ export default function CashFlowForecast({ className = '' }: CashFlowForecastPro
 
         <div className="h-48 mb-6">
           <svg className="w-full h-full" viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" role="img" aria-label="Projected cash balance">
-            <polygon points={chart.areaPoints} fill="rgba(var(--primary-blue-rgb), 0.12)" />
+            <polygon points={chart.areaPoints} fill="var(--primary-blue)" fillOpacity="0.12" />
             {chart.zeroY >= 0 && chart.zeroY <= chart.height && (
               <line x1="0" y1={chart.zeroY} x2={chart.width} y2={chart.zeroY} stroke="var(--text-2)" strokeDasharray="5,5" opacity="0.6" />
             )}
@@ -157,7 +157,7 @@ export default function CashFlowForecast({ className = '' }: CashFlowForecastPro
         </div>
 
         {alertMessages.length > 0 && (
-          <div className="mb-5 rounded-lg border border-[rgba(var(--primary-amber-rgb),0.4)] bg-[rgba(var(--primary-amber-rgb),0.12)] p-3">
+          <div className="mb-5 rounded-lg border border-[var(--primary-amber)]/40 bg-[var(--primary-amber)]/10 p-3">
             <div className="flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-[var(--primary-amber)]" />
               <div className="space-y-1">

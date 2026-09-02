@@ -13,17 +13,103 @@ from ..models import (
     Goal,
     GoalStatus,
     IncomeExpenseSummary,
+    RecurringRule,
+    Subscription,
     SpendingByCategory,
     Transaction,
     TransactionType,
 )
 from ..repositories.data_manager import data_manager
+from ..services.cash_flow_forecast import build_cash_flow_forecast
 from ..services.net_worth_valuation import compute_net_worth
 from ..storage.memory_adapter import db, func
 from ..utils.auth import get_current_user
 from ..utils.validators import Validators
 
 router = APIRouter()
+
+
+@router.get("/cash-flow/forecast")
+async def get_cash_flow_forecast(
+    days: int = Query(30, ge=7, le=90),
+    current_user: dict = Depends(get_current_user),
+    db_session: Any = Depends(db.get_db_dependency),
+):
+    """Project liquid balances after typical spending and scheduled bills."""
+    user_id = current_user["user_id"]
+    liquid_types = {
+        "checking",
+        "business_checking",
+        "savings",
+        "business_savings",
+    }
+    accounts = db_session.query(Account).filter(Account.user_id == user_id).all()
+    liquid_accounts = [
+        account
+        for account in accounts
+        if str(getattr(account.account_type, "value", account.account_type)).lower()
+        in liquid_types
+        and getattr(account, "is_active", True) is not False
+    ]
+    account_ids = [account.id for account in liquid_accounts]
+    starting_balance = sum(float(account.balance or 0) for account in liquid_accounts)
+
+    subscriptions = db_session.query(Subscription).filter(
+        Subscription.user_id == user_id
+    ).all()
+    subscriptions = [
+        subscription.to_dict()
+        for subscription in subscriptions
+        if str(getattr(subscription.status, "value", subscription.status)).lower() == "active"
+    ]
+
+    recurring_rules = db_session.query(RecurringRule).filter(
+        RecurringRule.user_id == user_id
+    ).all()
+    recurring_rules = [
+        rule.to_dict()
+        for rule in recurring_rules
+        if getattr(rule, "is_active", True) is not False
+    ]
+
+    today = date.today()
+    transaction_start = datetime.combine(today - timedelta(days=90), datetime.min.time())
+    transaction_end = datetime.combine(today, datetime.max.time())
+    transactions = db_session.query(Transaction).filter(
+        Transaction.account_id.in_(account_ids),
+        Transaction.transaction_date >= transaction_start,
+        Transaction.transaction_date <= transaction_end,
+        Transaction.status == "completed",
+    ).all()
+    subscription_terms = [
+        str(term).lower()
+        for subscription in subscriptions
+        for term in (subscription.get("name"), subscription.get("merchant_name"))
+        if term
+    ]
+    spend = 0.0
+    income = 0.0
+    for transaction in transactions:
+        transaction_type = str(
+            getattr(transaction.transaction_type, "value", transaction.transaction_type)
+        ).lower()
+        amount = float(transaction.amount or 0)
+        if transaction_type == "debit":
+            description = str(transaction.description or "").lower()
+            if not any(term in description for term in subscription_terms):
+                spend += amount
+        elif transaction_type == "credit":
+            income += amount
+
+    return build_cash_flow_forecast(
+        starting_balance=starting_balance,
+        subscriptions=subscriptions,
+        recurring_rules=recurring_rules,
+        avg_daily_spend=spend / 90,
+        avg_daily_income=income / 90,
+        days=days,
+        today=today,
+    )
 
 @router.get("/spending/by-category")
 async def get_spending_by_category(

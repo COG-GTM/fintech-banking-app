@@ -5,6 +5,7 @@ from .business_models import *
 from .card_models import *
 from .credit_models import *
 from .crypto_models import *
+from .dispute_models import *
 from .insurance_models import *
 from .loan_models import *
 from .savings_models import *
@@ -33,6 +34,11 @@ __all__ = [
     # Crypto models
     'CryptoWallet',
     'DeFiPosition',
+    # Dispute models
+    'DisputeCreate',
+    'DisputeReason',
+    'DisputeResponse',
+    'DisputeStatus',
     'ExpenseReport',
     'InsuranceClaim',
     # Insurance models

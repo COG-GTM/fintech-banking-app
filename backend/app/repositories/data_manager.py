@@ -97,6 +97,9 @@ class DataManager:
         # Credit-related stores
         self.credit_alerts: list[dict[str, Any]] = []
         self.credit_disputes: list[dict[str, Any]] = []
+
+        # Card transaction disputes (distinct from credit-report disputes)
+        self.transaction_disputes: list[dict[str, Any]] = []
         self.credit_builder_accounts: list[dict[str, Any]] = []
 
         # Unified system stores

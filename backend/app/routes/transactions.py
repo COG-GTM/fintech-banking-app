@@ -1,12 +1,15 @@
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from ..models import (
     Account,
+    Dispute,
     Merchant,
+    Notification,
+    NotificationType,
     Transaction,
     TransactionCreate,
     TransactionResponse,
@@ -15,6 +18,7 @@ from ..models import (
     TransactionUpdate,
     TransferCreate,
 )
+from ..models.entities.dispute_models import DisputeCreate, DisputeReason, DisputeResponse, DisputeStatus
 from ..repositories.data_manager import data_manager
 from ..services.goal_update_service import GoalUpdateService
 from ..services.spending_aggregator import aggregate_spending
@@ -23,6 +27,15 @@ from ..utils.auth import get_current_user
 from ..utils.validators import ValidationError, Validators
 
 router = APIRouter()
+
+DISPUTE_WINDOW_DAYS = 120
+
+DISPUTE_REASON_LABELS = {
+    DisputeReason.UNRECOGNISED: "Unrecognised",
+    DisputeReason.DUPLICATE: "Duplicate",
+    DisputeReason.WRONG_AMOUNT: "Wrong amount",
+    DisputeReason.GOODS_NOT_RECEIVED: "Goods not received",
+}
 
 @router.post("", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
 async def create_transaction(
@@ -256,6 +269,7 @@ async def get_transactions(
     min_amount: float | None = None,
     max_amount: float | None = None,
     search: str | None = None,
+    disputed: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=500),
     page: int | None = Query(None, ge=1),
@@ -307,6 +321,11 @@ async def get_transactions(
                 Transaction.description.ilike(search_term),
                 Transaction.notes.ilike(search_term)
             )
+        )
+
+    if disputed is not None:
+        query = query.filter(Transaction.is_disputed == True) if disputed else query.filter(  # noqa: E712
+            Transaction.is_disputed != True  # noqa: E712
         )
 
     # Order by date descending
@@ -539,3 +558,179 @@ async def update_transaction_notes(
     db_session.commit()
 
     return {"message": "Notes updated successfully", "notes": notes}
+
+
+# Transaction disputes
+def _get_owned_transaction(db_session: Any, transaction_id: int, user_id: int) -> Any:
+    transaction = db_session.query(Transaction).filter(
+        Transaction.id == transaction_id
+    ).first()
+
+    if not transaction:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Transaction not found"
+        )
+
+    Validators.validate_account_ownership(db_session, transaction.account_id, user_id)
+    return transaction
+
+
+def _get_open_dispute(db_session: Any, transaction_id: int) -> Any:
+    return db_session.query(Dispute).filter(
+        Dispute.transaction_id == transaction_id,
+        Dispute.status == DisputeStatus.OPEN
+    ).first()
+
+
+def dispute_ineligibility_reason(transaction: Any, now: datetime | None = None) -> str | None:
+    """Return why a transaction can't be disputed, or None if it can."""
+    tx_status = str(transaction.status or '').lower()
+    if transaction.is_disputed is True:
+        return "This transaction is already disputed"
+    if tx_status == TransactionStatus.PENDING:
+        return "Pending transactions can't be disputed until they complete"
+    if tx_status == TransactionStatus.FAILED:
+        return "Failed transactions can't be disputed"
+    if tx_status != TransactionStatus.COMPLETED:
+        return "Only completed transactions can be disputed"
+    if str(transaction.transaction_type or '').lower() != TransactionType.DEBIT:
+        return "Only card payments can be disputed"
+    if transaction.from_account_id or transaction.to_account_id:
+        return "Transfers and bill payments can't be disputed"
+
+    tx_date = transaction.transaction_date or transaction.created_at
+    if isinstance(tx_date, str):
+        tx_date = datetime.fromisoformat(tx_date)
+    if isinstance(tx_date, date) and not isinstance(tx_date, datetime):
+        tx_date = datetime(tx_date.year, tx_date.month, tx_date.day, tzinfo=UTC)
+    if tx_date is not None:
+        if tx_date.tzinfo is None:
+            tx_date = tx_date.replace(tzinfo=UTC)
+        if (now or datetime.now(UTC)) - tx_date > timedelta(days=DISPUTE_WINDOW_DAYS):
+            return f"Transactions older than {DISPUTE_WINDOW_DAYS} days can't be disputed"
+    return None
+
+
+def _notify_dispute(db_session: Any, user_id: int, transaction: Any, title: str, message: str) -> None:
+    db_session.add(Notification(
+        user_id=user_id,
+        type=NotificationType.TRANSACTION_ALERT,
+        title=title,
+        message=message,
+        is_read=False,
+        related_entity_type='transaction',
+        related_entity_id=transaction.id,
+    ))
+
+
+def _describe(transaction: Any) -> str:
+    return f"{transaction.description or 'transaction'} (${float(transaction.amount):,.2f})"
+
+
+@router.post(
+    "/{transaction_id}/dispute",
+    response_model=DisputeResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def open_dispute(
+    request: Request,
+    transaction_id: int,
+    dispute_data: DisputeCreate,
+    current_user: dict = Depends(get_current_user),
+    db_session: Any = Depends(db.get_db_dependency)
+):
+    """Open a dispute on a completed card transaction."""
+    user_id = current_user['user_id']
+    transaction = _get_owned_transaction(db_session, transaction_id, user_id)
+
+    if transaction.is_disputed is True or _get_open_dispute(db_session, transaction_id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This transaction is already disputed"
+        )
+
+    reason = dispute_ineligibility_reason(transaction)
+    if reason:
+        raise ValidationError(reason)
+
+    details = dispute_data.details.strip() if dispute_data.details else None
+    dispute = Dispute(
+        transaction_id=transaction.id,
+        user_id=user_id,
+        reason=dispute_data.reason.value,
+        details=details or None,
+        status=DisputeStatus.OPEN.value,
+    )
+    db_session.add(dispute)
+
+    transaction.is_disputed = True
+    transaction.dispute_id = dispute.id
+    transaction.updated_at = datetime.now(UTC)
+
+    _notify_dispute(
+        db_session,
+        user_id,
+        transaction,
+        "Dispute opened",
+        f"We've opened a dispute for {_describe(transaction)}: "
+        f"{DISPUTE_REASON_LABELS[dispute_data.reason]}.",
+    )
+    db_session.commit()
+
+    return DisputeResponse.model_validate(dispute)
+
+
+@router.get("/{transaction_id}/dispute", response_model=DisputeResponse)
+async def get_dispute(
+    transaction_id: int,
+    current_user: dict = Depends(get_current_user),
+    db_session: Any = Depends(db.get_db_dependency)
+):
+    """Get the open dispute for a transaction."""
+    _get_owned_transaction(db_session, transaction_id, current_user['user_id'])
+
+    dispute = _get_open_dispute(db_session, transaction_id)
+    if not dispute:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No open dispute for this transaction"
+        )
+    return DisputeResponse.model_validate(dispute)
+
+
+@router.delete("/{transaction_id}/dispute", response_model=DisputeResponse)
+async def cancel_dispute(
+    request: Request,
+    transaction_id: int,
+    current_user: dict = Depends(get_current_user),
+    db_session: Any = Depends(db.get_db_dependency)
+):
+    """Cancel the open dispute on a transaction."""
+    user_id = current_user['user_id']
+    transaction = _get_owned_transaction(db_session, transaction_id, user_id)
+
+    dispute = _get_open_dispute(db_session, transaction_id)
+    if not dispute:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No open dispute for this transaction"
+        )
+
+    dispute.status = DisputeStatus.CANCELLED.value
+    dispute.cancelled_at = datetime.now(UTC)
+
+    transaction.is_disputed = False
+    transaction.dispute_id = None
+    transaction.updated_at = datetime.now(UTC)
+
+    _notify_dispute(
+        db_session,
+        user_id,
+        transaction,
+        "Dispute cancelled",
+        f"Your dispute for {_describe(transaction)} has been cancelled.",
+    )
+    db_session.commit()
+
+    return DisputeResponse.model_validate(dispute)

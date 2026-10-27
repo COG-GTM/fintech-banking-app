@@ -164,6 +164,7 @@ class BaseMemoryModel(metaclass=ModelMeta):
                 'CreditSimulation': data_manager.credit_simulations,
                 'CreditAlert': data_manager.credit_alerts,
                 'CreditDispute': data_manager.credit_disputes,
+                'Dispute': data_manager.transaction_disputes,
                 'CreditBuilderAccount': data_manager.credit_builder_accounts,
                 'UnifiedBalance': data_manager.unified_balances,
                 'AssetBridge': data_manager.asset_bridges,
@@ -466,6 +467,32 @@ class Notification(BaseMemoryModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._data.setdefault('is_read', False)
+
+
+# Transaction dispute models
+class Dispute(BaseMemoryModel):
+    """A cardholder's dispute of a transaction they don't recognise."""
+    __tablename__ = "transaction_disputes"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._data.setdefault('status', DisputeStatus.OPEN)
+        self._data.setdefault('details', None)
+        self._data.setdefault('cancelled_at', None)
+
+
+class DisputeStatus:
+    """Transaction dispute status enum."""
+    OPEN = "open"
+    CANCELLED = "cancelled"
+
+
+class DisputeReason:
+    """Transaction dispute reason enum."""
+    UNRECOGNISED = "unrecognised"
+    DUPLICATE = "duplicate"
+    WRONG_AMOUNT = "wrong_amount"
+    GOODS_NOT_RECEIVED = "goods_not_received"
 
 
 class NotificationType:

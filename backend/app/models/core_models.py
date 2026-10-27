@@ -215,6 +215,18 @@ class TransactionResponse(BaseResponse):
     to_account_id: int | None = None
     reference_number: str | None = None
     recurring_rule_id: int | None = None
+    is_disputed: bool = False
+    dispute_id: int | None = None
+
+    @field_validator('is_disputed', mode='before')
+    @classmethod
+    def coerce_is_disputed(cls, v):
+        return v is True
+
+    @field_validator('dispute_id', mode='before')
+    @classmethod
+    def coerce_dispute_id(cls, v):
+        return v if isinstance(v, int) else None
 
     @field_validator('amount', mode='before')
     @classmethod

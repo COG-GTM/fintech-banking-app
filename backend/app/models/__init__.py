@@ -142,6 +142,7 @@ from .memory_models import (
     DeFiPosition as DeFiPosition,
     DeFiProtocolType as DeFiProtocolType,
     DirectMessage as DirectMessage,
+    Dispute as Dispute,
     ExpenseReport as ExpenseReportMemory,
     Goal as Goal,
     GoalContribution as GoalContribution,

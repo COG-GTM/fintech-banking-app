@@ -13,7 +13,8 @@ import {
   TrendingDown,
   AlertCircle,
   Plus,
-  RefreshCw
+  RefreshCw,
+  ShieldAlert
 } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -45,6 +46,7 @@ export interface UITransaction {
   account: string;
   accountType: string;
   status: 'completed' | 'pending' | 'failed';
+  disputed?: boolean;
   paymentMethod?: string;
   location?: string;
   notes?: string;
@@ -67,6 +69,7 @@ interface FilterState {
   maxAmount: string;
   status: string[];
   type: string[];
+  disputed: boolean;
 }
 
 export default function TransactionsPage() {
@@ -94,6 +97,7 @@ export default function TransactionsPage() {
     maxAmount: '',
     status: [],
     type: [],
+    disputed: false,
   });
 
   // Keep a ref to the current filters to avoid stale closures
@@ -119,11 +123,15 @@ export default function TransactionsPage() {
 
       // Load transactions and stats
       const [transactionsData, statsData] = await Promise.all([
-        transactionsService.getTransactions({
-          start_date: filtersToUse.dateRange.start,
-          end_date: filtersToUse.dateRange.end,
-          limit: 100 // Load more transactions
-        }),
+        transactionsService.getTransactions(
+          filtersToUse.disputed
+            ? { disputed: true, limit: 500 }
+            : {
+                start_date: filtersToUse.dateRange.start,
+                end_date: filtersToUse.dateRange.end,
+                limit: 100 // Load more transactions
+              }
+        ),
         transactionsService.getTransactionStats({
           start_date: filtersToUse.dateRange.start,
           end_date: filtersToUse.dateRange.end
@@ -176,6 +184,7 @@ export default function TransactionsPage() {
           account: formatAccountLabel(account ?? { id: transaction.account_id }),
           accountType: (account?.account_type || 'unknown').toLowerCase().replace(/_/g, ' '),
           status: transaction.status.toLowerCase() as UITransaction['status'],
+          disputed: transaction.is_disputed === true,
           paymentMethod,
           location: locationMap[merchant],
           notes: transaction.notes,
@@ -213,7 +222,7 @@ export default function TransactionsPage() {
     
     loadTransactionsData(filters);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.dateRange.start, filters.dateRange.end]);
+  }, [filters.dateRange.start, filters.dateRange.end, filters.disputed]);
 
   // Apply filters and search
   useEffect(() => {
@@ -229,8 +238,13 @@ export default function TransactionsPage() {
       );
     }
 
+    // Disputed filter (applied in API call, which ignores the date range)
+    if (filters.disputed) {
+      filtered = filtered.filter(t => t.disputed);
+    }
+
     // Date range filter (already applied in API call, but keeping for consistency)
-    if (filters.dateRange.start && filters.dateRange.end) {
+    if (!filters.disputed && filters.dateRange.start && filters.dateRange.end) {
       filtered = filtered.filter(t => {
         const transactionDate = new Date(t.date);
         const startDate = new Date(filters.dateRange.start);
@@ -508,6 +522,15 @@ export default function TransactionsPage() {
           </div>
           
           <div className="flex gap-2">
+            <Button
+              variant={filters.disputed ? 'primary' : 'secondary'}
+              icon={<ShieldAlert size={18} />}
+              onClick={() => setFilters({ ...filters, disputed: !filters.disputed })}
+              aria-pressed={filters.disputed}
+              data-testid="disputed-filter-toggle"
+            >
+              Disputed
+            </Button>
             <Dropdown
               items={sortOptions}
               value={`${sortBy}-${sortOrder}`}

@@ -17,6 +17,7 @@ interface FilterState {
   maxAmount: string;
   status: string[];
   type: string[];
+  disputed: boolean;
 }
 
 interface TransactionFiltersProps {
@@ -103,6 +104,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
       maxAmount: '',
       status: [],
       type: [],
+      disputed: false,
     });
   };
 
@@ -111,6 +113,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
     filters.accounts.length + 
     filters.status.length + 
     filters.type.length +
+    (filters.disputed ? 1 : 0) +
     (filters.minAmount ? 1 : 0) +
     (filters.maxAmount ? 1 : 0) +
     (filters.dateRange.start ? 1 : 0) +
@@ -240,6 +243,18 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
                   </span>
                 </label>
               ))}
+              <label className="flex items-center cursor-pointer">
+                <Checkbox
+                  checked={filters.disputed}
+                  onChange={() => onFiltersChange({ ...filters, disputed: !filters.disputed })}
+                  size="sm"
+                  analyticsId={`${analyticsId}-status-disputed`}
+                  analyticsLabel="Status disputed"
+                />
+                <span className="ml-2 text-sm text-[var(--text-1)]">
+                  Disputed only
+                </span>
+              </label>
             </div>
           </div>
 

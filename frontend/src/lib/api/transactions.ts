@@ -11,6 +11,8 @@ export interface Transaction {
   merchant_id?: number;
   transaction_date: string;
   status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  is_disputed?: boolean;
+  dispute_id?: number | null;
   notes?: string;
   tags?: string[];
   from_account_id?: number;
@@ -69,6 +71,54 @@ export interface TransactionFilters {
   min_amount?: number;
   max_amount?: number;
   search?: string;
+  disputed?: boolean;
+}
+
+export type DisputeReason = 'unrecognised' | 'duplicate' | 'wrong_amount' | 'goods_not_received';
+
+export const DISPUTE_REASONS: { value: DisputeReason; label: string }[] = [
+  { value: 'unrecognised', label: 'Unrecognised' },
+  { value: 'duplicate', label: 'Duplicate' },
+  { value: 'wrong_amount', label: 'Wrong amount' },
+  { value: 'goods_not_received', label: 'Goods not received' },
+];
+
+export const DISPUTE_WINDOW_DAYS = 120;
+
+export interface DisputeCreate {
+  reason: DisputeReason;
+  details?: string;
+}
+
+export interface Dispute {
+  id: number;
+  transaction_id: number;
+  user_id: number;
+  reason: DisputeReason;
+  details?: string | null;
+  status: 'open' | 'cancelled';
+  created_at: string;
+  cancelled_at?: string | null;
+}
+
+/** Why a transaction can't be disputed, or null if it can. Mirrors the API rules. */
+export function getDisputeIneligibilityReason(
+  transaction: Pick<Transaction, 'status' | 'transaction_type' | 'transaction_date' | 'is_disputed'> &
+    Partial<Pick<Transaction, 'from_account_id' | 'to_account_id'>>,
+  now: Date = new Date()
+): string | null {
+  const status = String(transaction.status).toUpperCase();
+  if (transaction.is_disputed) return 'This transaction is already disputed';
+  if (status === 'PENDING') return "Pending transactions can't be disputed until they complete";
+  if (status === 'FAILED') return "Failed transactions can't be disputed";
+  if (status !== 'COMPLETED') return 'Only completed transactions can be disputed';
+  if (String(transaction.transaction_type).toUpperCase() !== 'DEBIT') return 'Only card payments can be disputed';
+  if (transaction.from_account_id || transaction.to_account_id) return "Transfers and bill payments can't be disputed";
+  const ageMs = now.getTime() - new Date(transaction.transaction_date).getTime();
+  if (ageMs > DISPUTE_WINDOW_DAYS * 24 * 60 * 60 * 1000) {
+    return `Transactions older than ${DISPUTE_WINDOW_DAYS} days can't be disputed`;
+  }
+  return null;
 }
 
 export interface TransactionStats {
@@ -126,6 +176,18 @@ class TransactionsService {
 
   async deleteTransaction(id: number): Promise<void> {
     return apiClient.delete<void>(`/api/transactions/${id}`);
+  }
+
+  async openDispute(id: number, data: DisputeCreate): Promise<Dispute> {
+    return apiClient.post<Dispute>(`/api/transactions/${id}/dispute`, data);
+  }
+
+  async getDispute(id: number): Promise<Dispute> {
+    return apiClient.get<Dispute>(`/api/transactions/${id}/dispute`);
+  }
+
+  async cancelDispute(id: number): Promise<Dispute> {
+    return apiClient.delete<Dispute>(`/api/transactions/${id}/dispute`);
   }
 
   async getTransactionStats(filters?: TransactionFilters): Promise<TransactionStats> {

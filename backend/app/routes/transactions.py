@@ -596,10 +596,14 @@ def dispute_ineligibility_reason(transaction: Any, now: datetime | None = None) 
         return "Only completed transactions can be disputed"
     if str(transaction.transaction_type or '').lower() != TransactionType.DEBIT:
         return "Only card payments can be disputed"
+    if transaction.from_account_id or transaction.to_account_id:
+        return "Transfers and bill payments can't be disputed"
 
     tx_date = transaction.transaction_date or transaction.created_at
     if isinstance(tx_date, str):
         tx_date = datetime.fromisoformat(tx_date)
+    if isinstance(tx_date, date) and not isinstance(tx_date, datetime):
+        tx_date = datetime(tx_date.year, tx_date.month, tx_date.day, tzinfo=UTC)
     if tx_date is not None:
         if tx_date.tzinfo is None:
             tx_date = tx_date.replace(tzinfo=UTC)

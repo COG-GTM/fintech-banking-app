@@ -1,6 +1,6 @@
 """Tests for card transaction disputes."""
 import copy
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -37,6 +37,8 @@ def make_transaction():
             'transaction_date': datetime.now(UTC) - timedelta(days=3),
             'is_disputed': False,
             'dispute_id': None,
+            'from_account_id': None,
+            'to_account_id': None,
             **overrides,
         })
         return tx['id']
@@ -133,6 +135,9 @@ class TestDisputeEligibility:
         ({'status': 'cancelled'}, "completed"),
         ({'transaction_date': datetime.now(UTC) - timedelta(days=121)}, "120 days"),
         ({'transaction_type': 'credit'}, "card payments"),
+        ({'from_account_id': 1, 'to_account_id': 2}, "Transfers"),
+        ({'to_account_id': 2}, "bill payments"),
+        ({'transaction_date': (datetime.now(UTC) - timedelta(days=200)).date()}, "120 days"),
     ])
     def test_ineligible_transactions_are_rejected(
         self, client, auth_headers, make_transaction, overrides, message
@@ -144,6 +149,10 @@ class TestDisputeEligibility:
 
     def test_transaction_just_inside_window_is_eligible(self, client, auth_headers, make_transaction):
         tx_id = make_transaction(transaction_date=datetime.now(UTC) - timedelta(days=119))
+        assert _open(client, auth_headers, tx_id).status_code == 201
+
+    def test_date_only_transaction_date_is_supported(self, client, auth_headers, make_transaction):
+        tx_id = make_transaction(transaction_date=date.today())
         assert _open(client, auth_headers, tx_id).status_code == 201
 
     def test_double_dispute_is_rejected(self, client, auth_headers, make_transaction):

@@ -125,7 +125,7 @@ export default function TransactionsPage() {
       const [transactionsData, statsData] = await Promise.all([
         transactionsService.getTransactions(
           filtersToUse.disputed
-            ? { disputed: true, limit: 100 }
+            ? { disputed: true, limit: 500 }
             : {
                 start_date: filtersToUse.dateRange.start,
                 end_date: filtersToUse.dateRange.end,

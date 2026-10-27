@@ -102,6 +102,7 @@ describe('getDisputeIneligibilityReason', () => {
     transaction_type: 'DEBIT' as const,
     transaction_date: '2026-05-20T12:00:00Z',
     is_disputed: false,
+    to_account_id: undefined as number | undefined,
   }
 
   it('allows recent completed card payments', () => {
@@ -113,6 +114,7 @@ describe('getDisputeIneligibilityReason', () => {
     [{ status: 'FAILED' }, /failed/i],
     [{ is_disputed: true }, /already disputed/i],
     [{ transaction_date: '2026-01-01T12:00:00Z' }, /120 days/],
+    [{ to_account_id: 7 }, /transfers and bill payments/i],
   ])('explains why %o is blocked', (override, message) => {
     expect(getDisputeIneligibilityReason({ ...base, ...override } as typeof base, now)).toMatch(message)
   })

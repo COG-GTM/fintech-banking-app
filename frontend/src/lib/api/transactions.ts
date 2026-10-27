@@ -103,7 +103,8 @@ export interface Dispute {
 
 /** Why a transaction can't be disputed, or null if it can. Mirrors the API rules. */
 export function getDisputeIneligibilityReason(
-  transaction: Pick<Transaction, 'status' | 'transaction_type' | 'transaction_date' | 'is_disputed'>,
+  transaction: Pick<Transaction, 'status' | 'transaction_type' | 'transaction_date' | 'is_disputed'> &
+    Partial<Pick<Transaction, 'from_account_id' | 'to_account_id'>>,
   now: Date = new Date()
 ): string | null {
   const status = String(transaction.status).toUpperCase();
@@ -112,6 +113,7 @@ export function getDisputeIneligibilityReason(
   if (status === 'FAILED') return "Failed transactions can't be disputed";
   if (status !== 'COMPLETED') return 'Only completed transactions can be disputed';
   if (String(transaction.transaction_type).toUpperCase() !== 'DEBIT') return 'Only card payments can be disputed';
+  if (transaction.from_account_id || transaction.to_account_id) return "Transfers and bill payments can't be disputed";
   const ageMs = now.getTime() - new Date(transaction.transaction_date).getTime();
   if (ageMs > DISPUTE_WINDOW_DAYS * 24 * 60 * 60 * 1000) {
     return `Transactions older than ${DISPUTE_WINDOW_DAYS} days can't be disputed`;

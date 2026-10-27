@@ -559,6 +559,7 @@ class MemoryQuery:
             Category,
             Contact,
             DirectMessage,
+            Dispute,
             Goal,
             Log,
             LoginAttempt,
@@ -583,6 +584,7 @@ class MemoryQuery:
             'Notification': Notification,
             'Contact': Contact,
             'DirectMessage': DirectMessage,
+            'Dispute': Dispute,
             'Log': Log,
             'Merchant': Merchant,
             'Card': Card,
@@ -718,6 +720,7 @@ class MemorySession:
             'ChallengeParticipant': data_manager.challenge_participants,
             'Invoice': data_manager.invoices,
             'ExpenseReport': data_manager.expense_reports,
+            'Dispute': data_manager.transaction_disputes,
             'Receipt': data_manager.receipts,
             'CancellationReminder': data_manager.cancellation_reminders,
             'DirectMessage': data_manager.direct_messages,
@@ -919,6 +922,7 @@ class MemorySession:
             'security_incidents': data_manager.security_incidents,
             'account_lockouts': data_manager.account_lockouts,
             'trusted_devices': data_manager.trusted_devices,
+            'transaction_disputes': data_manager.transaction_disputes,
         }
 
     def _model_to_dict(self, obj):
@@ -1041,6 +1045,7 @@ class MemorySession:
                 'credit_alerts': data_manager.credit_alerts,
                 'credit_builder_accounts': data_manager.credit_builder_accounts,
                 'credit_disputes': data_manager.credit_disputes,
+                'transaction_disputes': data_manager.transaction_disputes,
             }
             if tablename in store_map:
                 store_map[tablename].append(obj_dict)

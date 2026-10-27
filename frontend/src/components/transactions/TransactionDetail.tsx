@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
   X,
@@ -36,6 +37,7 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Dropdown from '../ui/Dropdown';
 import Modal from '../ui/Modal';
+import DisputedBadge from './DisputedBadge';
 import { UITransaction as Transaction } from '@/app/(authenticated)/transactions/page';
 import { transactionsService, TransactionUpdate, Category } from '@/lib/api';
 import { useAlert } from '@/contexts/AlertContext';
@@ -55,6 +57,7 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
   allTransactions = [],
   categories = [],
 }) => {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editedTransaction, setEditedTransaction] = useState(transaction);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -363,6 +366,11 @@ startxref
                 <span className="text-sm text-[var(--primary-amber)]">Pending</span>
               </div>
             )}
+            {transaction.disputed && (
+              <div className="flex justify-center mt-2">
+                <DisputedBadge />
+              </div>
+            )}
           </div>
 
           {/* Transaction Info */}
@@ -648,7 +656,15 @@ startxref
 
           {/* Actions */}
           {!isEditing && (
-            <div className="pt-4 border-t border-[var(--border-1)]">
+            <div className="pt-4 border-t border-[var(--border-1)] space-y-3">
+              <Button
+                variant="primary"
+                fullWidth
+                icon={<ExternalLink size={18} />}
+                onClick={() => router.push(`/transactions/${transaction.id}`)}
+              >
+                View receipt & dispute
+              </Button>
               <Button
                 variant="secondary"
                 fullWidth

@@ -18,6 +18,7 @@ import {
   Heart,
   Plane
 } from 'lucide-react';
+import DisputedBadge from './DisputedBadge';
 import Card from '../ui/Card';
 import { UITransaction as Transaction } from '@/app/(authenticated)/transactions/page';
 
@@ -235,6 +236,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                               {transaction.category}
                             </span>
                             
+                            {transaction.disputed && <DisputedBadge />}
+
                             {transaction.status === 'pending' && (
                               <div className="flex items-center gap-1">
                                 <Clock className="w-3 h-3 text-[var(--primary-amber)]" />

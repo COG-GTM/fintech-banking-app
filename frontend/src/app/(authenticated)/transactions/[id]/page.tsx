@@ -15,12 +15,17 @@ import {
   User,
   CreditCard,
   Hash,
-  Lock
+  Lock,
+  ShieldAlert
 } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import DisputeModal from '@/components/transactions/DisputeModal';
+import DisputedBadge from '@/components/transactions/DisputedBadge';
+import { useAlert } from '@/contexts/AlertContext';
 import { transactionsService } from '@/lib/api';
-import { Transaction } from '@/lib/api/transactions';
+import { DISPUTE_REASONS, getDisputeIneligibilityReason } from '@/lib/api/transactions';
+import type { Dispute, DisputeCreate, Transaction } from '@/lib/api/transactions';
 import { format } from 'date-fns';
 
 export default function TransactionDetailPage() {
@@ -28,12 +33,17 @@ export default function TransactionDetailPage() {
   const params = useParams();
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [dispute, setDispute] = useState<Dispute | null>(null);
+  const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
+  const [isCancellingDispute, setIsCancellingDispute] = useState(false);
+  const { showSuccess, showError } = useAlert();
 
   const loadTransaction = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await transactionsService.getTransaction(Number(params.id));
       setTransaction(data);
+      setDispute(data.is_disputed ? await transactionsService.getDispute(data.id).catch(() => null) : null);
     } catch {
       router.push('/transactions');
     } finally {
@@ -60,6 +70,32 @@ export default function TransactionDetailPage() {
         text: `Transaction #${transaction.reference_number} - $${transaction.amount.toFixed(2)}`,
         url: window.location.href,
       });
+    }
+  };
+
+  const handleOpenDispute = async (data: DisputeCreate) => {
+    if (!transaction) return;
+    const opened = await transactionsService.openDispute(transaction.id, data);
+    setDispute(opened);
+    setTransaction({ ...transaction, is_disputed: true, dispute_id: opened.id });
+    setIsDisputeModalOpen(false);
+    window.dispatchEvent(new Event('refreshNotifications'));
+    showSuccess('Dispute opened', "We'll look into this transaction and keep you posted.");
+  };
+
+  const handleCancelDispute = async () => {
+    if (!transaction) return;
+    try {
+      setIsCancellingDispute(true);
+      await transactionsService.cancelDispute(transaction.id);
+      setDispute(null);
+      setTransaction({ ...transaction, is_disputed: false, dispute_id: null });
+      window.dispatchEvent(new Event('refreshNotifications'));
+      showSuccess('Dispute cancelled', 'This transaction is no longer disputed.');
+    } catch (err) {
+      showError('Could not cancel dispute', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setIsCancellingDispute(false);
     }
   };
 
@@ -108,6 +144,9 @@ export default function TransactionDetailPage() {
     return null;
   }
 
+  const disputeBlockedReason = getDisputeIneligibilityReason(transaction);
+  const disputeReasonLabel = DISPUTE_REASONS.find(r => r.value === dispute?.reason)?.label;
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
@@ -145,6 +184,7 @@ export default function TransactionDetailPage() {
                 <span className={`font-medium ${getStatusColor(transaction.status)}`}>
                   {transaction.status}
                 </span>
+                {transaction.is_disputed && <DisputedBadge />}
               </div>
             </div>
 
@@ -222,7 +262,62 @@ export default function TransactionDetailPage() {
               >
                 Share
               </Button>
+              <div
+                className="relative group w-full"
+                title={disputeBlockedReason ?? undefined}
+                tabIndex={disputeBlockedReason ? 0 : undefined}
+                aria-describedby={disputeBlockedReason ? 'dispute-disabled-reason' : undefined}
+              >
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  icon={<ShieldAlert size={18} />}
+                  onClick={() => setIsDisputeModalOpen(true)}
+                  disabled={!!disputeBlockedReason}
+                  className={disputeBlockedReason ? 'pointer-events-none' : undefined}
+                >
+                  Dispute transaction
+                </Button>
+                {disputeBlockedReason && (
+                  <span
+                    id="dispute-disabled-reason"
+                    role="tooltip"
+                    className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-56 -translate-x-1/2 rounded-lg bg-[var(--bg-color,#111827)] border border-[var(--border-1)] px-3 py-2 text-center text-xs text-[var(--text-1)] shadow-lg opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                  >
+                    {disputeBlockedReason}
+                  </span>
+                )}
+              </div>
             </div>
+
+            {/* Open dispute */}
+            {transaction.is_disputed && (
+              <div
+                data-testid="open-dispute-panel"
+                className="mt-6 p-4 rounded-lg border border-[var(--primary-amber)] bg-[rgba(var(--glass-rgb),0.1)] flex flex-col sm:flex-row sm:items-center gap-3 justify-between"
+              >
+                <div>
+                  <p className="text-sm font-medium text-[var(--text-1)] flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4 text-[var(--primary-amber)]" />
+                    Dispute open{disputeReasonLabel ? `: ${disputeReasonLabel}` : ''}
+                  </p>
+                  {dispute && (
+                    <p className="text-xs text-[var(--text-2)] mt-1">
+                      Opened {format(new Date(dispute.created_at), 'MMM dd, yyyy HH:mm')}
+                      {dispute.details ? ` · ${dispute.details}` : ''}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={handleCancelDispute}
+                  loading={isCancellingDispute}
+                >
+                  Cancel dispute
+                </Button>
+              </div>
+            )}
 
             {/* Security Note */}
             <div className="mt-6 p-4 rounded-lg bg-[rgba(var(--glass-rgb),0.1)] border border-[var(--border-1)]">
@@ -233,6 +328,13 @@ export default function TransactionDetailPage() {
           </Card>
         </motion.div>
       </div>
+
+      <DisputeModal
+        isOpen={isDisputeModalOpen}
+        onClose={() => setIsDisputeModalOpen(false)}
+        onSubmit={handleOpenDispute}
+        transactionLabel={`${transaction.description} · $${Number(transaction.amount).toFixed(2)}`}
+      />
     </div>
   );
 }

@@ -13,7 +13,8 @@ export { accountsService } from './accounts';
 export type { Account, AccountCreate, AccountUpdate, AccountSummary, JointAccountCreate } from './accounts';
 
 export { transactionsService } from './transactions';
-export type { Transaction, TransactionCreate, TransactionUpdate, TransactionFilters, TransactionStats } from './transactions';
+export type { Transaction, TransactionCreate, TransactionUpdate, TransactionFilters, TransactionStats, Dispute, DisputeCreate, DisputeReason } from './transactions';
+export { DISPUTE_REASONS, getDisputeIneligibilityReason } from './transactions';
 
 export { budgetsService } from './budgets';
 export type { Budget, BudgetCreate, BudgetUpdate, BudgetSummary, BudgetAlert } from './budgets';

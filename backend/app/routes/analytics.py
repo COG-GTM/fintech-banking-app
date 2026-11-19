@@ -254,6 +254,14 @@ async def get_net_worth_history(
         data_manager, current_user['user_id']
     )["investment_value"]
 
+    # Read each transaction's fields once, grouped per account (newest first),
+    # instead of rescanning every transaction for every account and month.
+    reversals_by_account = {account.id: [] for account in accounts}
+    for tx in reversed(transactions):
+        reversals = reversals_by_account.get(tx.account_id)
+        if reversals is not None:
+            reversals.append((tx.transaction_date.date(), tx.transaction_type, tx.amount))
+
     # Calculate month-by-month net worth
     history = []
     current = start_date.replace(day=1)
@@ -270,13 +278,13 @@ async def get_net_worth_history(
             balance = account.balance
 
             # Work backwards from current transactions
-            for tx in reversed(transactions):
-                if tx.account_id == account.id and tx.transaction_date.date() > month_end:
+            for tx_date, tx_type, tx_amount in reversals_by_account[account.id]:
+                if tx_date > month_end:
                     # Reverse the transaction
-                    if tx.transaction_type == TransactionType.DEBIT:
-                        balance += tx.amount
-                    elif tx.transaction_type == TransactionType.CREDIT:
-                        balance -= tx.amount
+                    if tx_type == TransactionType.DEBIT:
+                        balance += tx_amount
+                    elif tx_type == TransactionType.CREDIT:
+                        balance -= tx_amount
 
             # Categorize by account type. Investment value is folded in via the
             # canonical valuation above, so only liquid bank assets are summed
